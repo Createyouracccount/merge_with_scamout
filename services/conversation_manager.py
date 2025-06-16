@@ -81,7 +81,7 @@ class HighPerformanceConversationManager:
         self.audio_monitor = {
             'is_monitoring' : False,
             'audio_level' : 0.0,
-            'silence_threshold' : 0.03, # 침묵 임계값
+            'silence_threshold' : 0.015, # 침묵 임계값
             'last_audio_time' : None,
             # 'silence_check_interval': 1  # 1초마다 체크
         }
@@ -90,12 +90,12 @@ class HighPerformanceConversationManager:
         # 침묵 감지
         self.silence_detection = {
             'enabled': True,
-            'timeout': 10.0,  # 5초 침묵 시 다음으로
+            'timeout': 5.0,  # 5초 침묵 시 다음으로
             'last_speech_time': None,
             'last_audio_activity' : None, # 마지막 오디오 활동 시간
             'is_first_interaction': True,  # 첫 번째 상호작용 체크
             'min_interactions': 1,  # 최소 상호작용 횟수
-            'silence_check_interval': 0.5 
+            'silence_check_interval': 0.2 
         }
 
     def _start_audio_monitoring(self):
@@ -437,7 +437,7 @@ class HighPerformanceConversationManager:
                     self.current_langgraph_state, 
                     user_input
                 ),
-                timeout=2.0  # 2초 타임아웃
+                timeout=10.0  # 10초 타임아웃 / 짧게 줬는데 너무 빨리 타임아웃됨.
             )
             
             # AI 응답 추출 및 처리
@@ -585,10 +585,8 @@ class HighPerformanceConversationManager:
         # 간단한 키워드 기반 빠른 응답
         user_lower = user_input.lower()
         
-        if any(word in user_lower for word in ['돈', '송금', '보냈']):
+        if any(word in user_lower for word in ['돈', '송금', '보냈', '계좌', '이체', '계좌이체']):
             quick_response = "긴급 상황으로 보입니다. 즉시 112에 신고하세요."
-        elif any(word in user_lower for word in ['앱', '설치']):
-            quick_response = "휴대폰을 비행기모드로 전환하고 전원을 끄세요."
         else:
             quick_response = "상황을 파악했습니다. 추가로 궁금한 점이 있으시면 말씀해 주세요."
         
@@ -597,7 +595,8 @@ class HighPerformanceConversationManager:
             self.current_langgraph_state['messages'].append({
                 "role": "assistant",
                 "content": quick_response,
-                "timestamp": datetime.now()
+                "timestamp": datetime.now(),
+                "type": "timeout_response"
             })
         
         await self._speak_response_optimized(quick_response)

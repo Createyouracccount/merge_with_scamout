@@ -9,6 +9,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, current_dir)
 
 from langgraph.graph import StateGraph, START, END
+
 from core.state import VictimRecoveryState, create_initial_recovery_state
 
 class StructuredVoicePhishingGraph:
@@ -233,7 +234,7 @@ class StructuredVoicePhishingGraph:
         
         # 지급정지 신청
         if not account_frozen and loss_amount > 0:
-            emergency_actions.append("즉시 112에 전화하여 '보이스피싱 지급정지 신청'을 요청하세요.")
+            emergency_actions.append("즉시 일일이에 전화하여 '보이스피싱 지급정지 신청'을 요청하세요.")
         
         # 경찰 신고
         if not reported_to_police:
@@ -510,7 +511,7 @@ class StructuredVoicePhishingGraph:
             
             state["messages"].append({
                 "role": "assistant",
-                "content": "처리 중 문제가 발생했습니다. 긴급한 경우 112로 연락하세요.",
+                "content": "처리 중 문제가 발생했습니다. 긴급한 경우 일일이로 연락하세요.",
                 "timestamp": datetime.now()
             })
             return state

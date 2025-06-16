@@ -18,6 +18,7 @@ class StructuredVoicePhishingGraph:
     - 단계별 정보 수집
     - 강제 순서 진행
     - 명확한 질문-답변 구조
+    - 실질적 도움 제공 중심
     """
     
     def __init__(self, debug: bool = True):
@@ -122,7 +123,7 @@ class StructuredVoicePhishingGraph:
             return state
             
         greeting_message = """안녕하세요! 보이스피싱 에프터케어 센터입니다.
-신속한 도움을 위해 몇 가지 질문을 드리겠습니다. 힘드시겠지만,, 답변 부탁드립니다."""
+신속한 도움을 위해 몇 가지 질문을 드리겠습니다. 힘드시겠지만, 답변 부탁드립니다."""
 
         state["messages"].append({
             "role": "assistant",
@@ -224,35 +225,43 @@ class StructuredVoicePhishingGraph:
         
         last_message = self._get_last_user_message(state)
         
-        # 스마트한 긴급도 판단
-        urgency_level = self._assess_urgency_smart(last_message)
+        # 첫 시작일 때는 기본 긴급도 설정
+        if not last_message:
+            urgency_level = 5  # 기본값
+        else:
+            # 스마트한 긴급도 판단
+            urgency_level = self._assess_urgency_smart(last_message)
         
         state["urgency_level"] = urgency_level
         
-        # 긴급도에 따른 응답 생성
-        if urgency_level >= 8:
-            state["is_emergency"] = True
-            response = """🚨 긴급 상황으로 판단됩니다! 
-            
-    즉시 도움이 필요하시군요. 빠른 조치를 위해 몇 가지 정보가 필요합니다."""
-            
-        elif urgency_level >= 6:
-            state["is_emergency"] = False
-            response = """상황이 심각해 보입니다. 
-            
-    자세한 내용을 듣고 적절한 도움을 드리겠습니다."""
-            
-        elif urgency_level >= 4:
-            state["is_emergency"] = False
-            response = """말씀하신 내용을 보니 걱정되는 상황이시네요.
-            
-    어떤 일이 있었는지 차근차근 말씀해 주시겠어요?"""
-            
+        # 첫 시작일 때는 단순 인사, 이후에는 긴급도별 응답
+        if not last_message:
+            response = """같이 하나씩 해결해보아요. 어디서부터 시작해볼까요?"""
         else:
-            state["is_emergency"] = False
-            response = """보이스피싱 상담센터입니다.
-            
-    어떤 상황인지 자세히 말씀해 주시면 도움을 드리겠습니다."""
+            # 긴급도에 따른 응답 생성
+            if urgency_level >= 8:
+                state["is_emergency"] = True
+                response = """🚨 긴급 상황으로 판단됩니다! 
+                
+        즉시 도움이 필요하시군요. 빠른 조치를 위해 몇 가지 정보가 필요합니다."""
+                
+            elif urgency_level >= 6:
+                state["is_emergency"] = False
+                response = """상황이 심각해 보입니다. 
+                
+        자세한 내용을 듣고 적절한 도움을 드리겠습니다."""
+                
+            elif urgency_level >= 4:
+                state["is_emergency"] = False
+                response = """말씀하신 내용을 보니 걱정되는 상황이시네요.
+                
+        어떤 일이 있었는지 차근차근 말씀해 주시겠어요?"""
+                
+            else:
+                state["is_emergency"] = False
+                response = """보이스피싱 상담센터입니다.
+                
+        어떤 상황인지 자세히 말씀해 주시면 도움을 드리겠습니다."""
         
         state["messages"].append({
             "role": "assistant", 
@@ -316,53 +325,22 @@ class StructuredVoicePhishingGraph:
         
         return state
     
-    def _generate_smart_confirmation(self, field: str, extraction_result: dict) -> str:
-        """스마트 확인 메시지 생성"""
-        
-        field_names = {
-            "victim": "피해자",
-            "loss_amount": "송금 금액", 
-            "time_context": "송금 시기",
-            "account_frozen": "계좌 지급정지",
-            "reported_to_police": "경찰 신고"
-        }
-        
-        field_name = field_names.get(field, field)
-        
-        if field == "loss_amount":
-            value = extraction_result.get('formatted', extraction_result.get('raw_text'))
-        else:
-            value = extraction_result.get('answer', extraction_result.get('normalized', extraction_result.get('raw_text')))
-        
-        return f"✅ {field_name}: {value}"
-    
     def _emergency_action_node(self, state: VictimRecoveryState) -> VictimRecoveryState:
-        """긴급 조치 안내"""
+        """실질적 도움이 되는 긴급 조치 안내"""
         
-        # 수집된 정보 기반 긴급 조치
-        victim = state.get("victim", "unknown")
+        # 수집된 정보 기반 맞춤 조치
+        urgency_level = state.get("urgency_level", 5)
         loss_amount = state.get("loss_amount", 0)
         account_frozen = state.get("account_frozen", False)
         reported_to_police = state.get("reported_to_police", False)
         
-        emergency_actions = []
-        
-        # 지급정지 신청
-        if not account_frozen and loss_amount > 0:
-            emergency_actions.append("즉시 일일이(경찰, 112) 또는 일삼삼이(금감원, 1332)에 신고하세요.")
-        
-        # 경찰 신고
-        if not reported_to_police:
-            emergency_actions.append("가까운 경찰서에 보이스피싱 피해 신고를 하세요.")
-        
-        # 추가 피해 방지
-        emergency_actions.append("의심스러운 전화는 즉시 차단하세요.")
-        emergency_actions.append("모든 금융 앱의 비밀번호를 변경하세요.")
-        
-        if emergency_actions:
-            response = "🚨 긴급 조치 사항:\n\n" + "\n\n".join(emergency_actions)
+        # 긴급도별 실질적 조치 안내
+        if urgency_level >= 8:
+            response = self._generate_high_urgency_guidance(state)
+        elif urgency_level >= 6:
+            response = self._generate_medium_urgency_guidance(state)
         else:
-            response = "필요한 조치를 모두 완료하셨습니다. 추가 피해가 없도록 주의하세요."
+            response = self._generate_low_urgency_guidance(state)
         
         state["messages"].append({
             "role": "assistant",
@@ -373,24 +351,154 @@ class StructuredVoicePhishingGraph:
         state["current_step"] = "emergency_complete"
         
         if self.debug:
-            print("✅ 긴급 조치 안내 완료")
+            print("✅ 실질적 긴급 조치 안내 완료")
         
         return state
     
+    def _generate_high_urgency_guidance(self, state: VictimRecoveryState) -> str:
+        """고긴급도 실질적 조치 안내"""
+        
+        loss_amount = state.get("loss_amount", 0)
+        account_frozen = state.get("account_frozen", False)
+        
+        response = """🚨 즉시 실행하세요 (추가 피해 방지가 우선):
+
+1️⃣ **명의도용 확인 & 차단** (가장 중요!)
+   • mSAFER (www.msafer.or.kr) 또는 PASS앱에서
+   • 내 명의로 개통된 모든 휴대폰 확인
+   • 명의도용 발견시 즉시 해지 + 신규개통 차단
+
+2️⃣ **계좌 명의도용 확인**
+   • payinfo.or.kr (금융결제원)에서 확인
+   • 내가 모르는 계좌 있으면 '내계좌 일괄지급정지'
+
+3️⃣ **확실한 지원 받기**
+   • 보이스피싱제로 (voicephisingzero.co.kr)
+     → 생활비 최대 300만원 (중위소득 100% 이하)
+     → 무료 법률상담 + 소송지원
+   • 대한법률구조공단 132번 무료 상담
+
+4️⃣ **개인정보 보호**
+   • pd.fss.or.kr에서 개인정보노출자 등록
+   • 신규 계좌개설/카드발급 제한"""
+
+        # 개인 상황별 추가 안내
+        if not account_frozen:
+            response += "\n\n⚠️ 지급정지 미신청시: 112나 해당 은행 고객센터로 즉시 신청"
+        
+        if loss_amount and "만원" in str(loss_amount):
+            response += "\n\n💰 피해금액이 큰 경우: 보이스피싱제로 지원이 3일 환급보다 확실할 수 있습니다"
+        
+        response += """\n\n🎯 **핵심**: 3일 환급 성공률은 30-40%이지만, 
+보이스피싱제로 생활비 지원은 조건만 맞으면 확실한 300만원입니다!"""
+        
+        return response
+    
+    def _generate_medium_urgency_guidance(self, state: VictimRecoveryState) -> str:
+        """중긴급도 맞춤 조치 안내"""
+        
+        response = """📞 **먼저 전문가 상담 받으세요:**
+
+1️⃣ **무료 법률상담** (개인 맞춤 전략 수립)
+   • 대한법률구조공단 132번 (무료)
+   • 온라인: www.klac.or.kr 사이버상담
+   • 상황별 최적 대응법 안내
+
+2️⃣ **지원 가능성 확인**
+   • 보이스피싱제로 (1811-0041)
+     → 중위소득 100% 이하면 생활비 300만원
+     → 심리상담비 200만원, 법률비용 지원
+   • 최근 3년 내 피해면 신청 가능
+
+3️⃣ **예방 조치**
+   • mSAFER 명의도용 방지 서비스 등록
+   • 가족들도 함께 등록 권장
+
+4️⃣ **정보 수집**
+   • payinfo.or.kr에서 계좌 현황 확인
+   • 의심스러운 개설 계좌 없는지 점검
+
+💡 **상담 결과에 따라** 3일 환급 vs 생활비 지원 vs 소송 중 
+최적 방법을 선택하세요."""
+        
+        return response
+    
+    def _generate_low_urgency_guidance(self, state: VictimRecoveryState) -> str:
+        """저긴급도 예방 중심 안내"""
+        
+        response = """🛡️ **예방과 정보 수집 중심:**
+
+1️⃣ **무료 상담으로 정확한 판단**
+   • 대한법률구조공단 132번
+   • 실제 피해인지, 대응법은 무엇인지 확인
+
+2️⃣ **명의도용 방지 설정** (매우 중요)
+   • mSAFER (www.msafer.or.kr) 가입
+   • 휴대폰, 인터넷 등 신규 개통 시 SMS 알림
+   • 가족 전체 설정 권장
+
+3️⃣ **지원 조건 미리 확인**
+   • 보이스피싱제로 지원 대상인지 확인
+   • 중위소득 100% 이하면 향후 지원 가능
+
+4️⃣ **장기적 보안 강화**
+   • 모든 금융앱 비밀번호 변경
+   • 이상한 링크/앱 설치 주의
+   • pd.fss.or.kr 개인정보노출 등록 고려
+
+📚 **정보 수집**: 실제 피해 규모와 회복 가능성을 
+전문가 상담으로 정확히 파악하는 것이 우선입니다."""
+        
+        return response
+    
     def _complete_node(self, state: VictimRecoveryState) -> VictimRecoveryState:
-        """상담 완료"""
+        """개선된 상담 완료"""
         
         # 수집된 정보 요약
         summary = self._generate_summary(state)
+        urgency_level = state.get("urgency_level", 5)
         
-        completion_message = f"""상담이 완료되었습니다.
+        # 긴급도에 따른 맞춤 완료 메시지
+        if urgency_level >= 8:
+            completion_message = f"""상담이 완료되었습니다.
 
 📋 수집된 정보 요약:
 {summary}
 
-⚠️ 중요: 삼(3)일 이내 경찰서에서 사건사고사실확인원을 발급받아 은행에 제출해야 환급 가능합니다.
+🚨 **우선순위 행동사항:**
+1. mSAFER (www.msafer.or.kr)에서 명의도용 차단
+2. 보이스피싱제로 (voicephisingzero.co.kr) 생활비 지원 신청
+3. 대한법률구조공단 132번 무료 상담
 
-앞으로도 의심스러운 연락에 주의하시고, 문제가 발생하면 즉시 일일이(112) 또는 일삼삼이(1332) 연락하세요."""
+⚠️ 기억하세요: 3일 환급보다 300만원 생활비 지원이 더 확실합니다!
+
+24시간 내 위 조치들을 완료하시고, 추가 문의사항이 있으시면 언제든 연락주세요."""
+
+        elif urgency_level >= 6:
+            completion_message = f"""상담이 완료되었습니다.
+
+📋 수집된 정보 요약:
+{summary}
+
+📞 **다음 단계:**
+1. 대한법률구조공단 132번으로 무료 전문상담
+2. 상담 결과에 따라 최적 대응 방법 선택
+3. mSAFER 명의도용 방지 서비스 등록
+
+💡 전문가 상담을 통해 개인 상황에 맞는 최적의 해결책을 찾으시기 바랍니다."""
+
+        else:
+            completion_message = f"""상담이 완료되었습니다.
+
+📋 수집된 정보 요약:
+{summary}
+
+🛡️ **예방 중심 조치:**
+1. mSAFER (www.msafer.or.kr) 명의도용 방지 서비스 등록
+2. 대한법률구조공단 132번으로 정확한 상황 확인
+3. 보이스피싱제로 지원 조건 미리 확인
+
+정확한 피해 여부와 대응법은 전문가 상담을 통해 확인하시기 바랍니다."""
 
         state["messages"].append({
             "role": "assistant",
@@ -401,7 +509,7 @@ class StructuredVoicePhishingGraph:
         state["current_step"] = "consultation_complete"
         
         if self.debug:
-            print("✅ 상담 완료")
+            print("✅ 개선된 상담 완료")
         
         return state
     
@@ -417,23 +525,23 @@ class StructuredVoicePhishingGraph:
         """초기 평가 후 라우팅 - 무조건 정보수집으로"""
         return "collect_info"
 
-    def _route_after_collect(self, state: VictimRecoveryState) -> Literal["emergency_action", "complete"]:
-        """정보 수집 후 라우팅 - 완료 조건 명확화"""
+    def _route_after_collect(self, state: VictimRecoveryState) -> Literal["collect_info", "emergency_action", "complete"]:
+        """정보 수집 후 라우팅 - 수정된 로직"""
         
         # 정보 수집 완료 체크
         current_index = state.get("current_question_index", 0)
         
-        if current_index >= len(self.question_flow):
+        if current_index < len(self.question_flow):
+            # 아직 질문이 남아있으면 계속 정보 수집
+            return "collect_info"
+        else:
             # 모든 질문 완료
             state["info_collection_complete"] = True
             
-            if state.get("is_emergency", False):
+            if state.get("is_emergency", False) or state.get("urgency_level", 0) >= 7:
                 return "emergency_action"
             else:
                 return "complete"
-        else:
-            # 아직 질문이 남아있으면 다시 collect_info로 가지 말고 complete로
-            return "complete"
         
     def _route_after_emergency(self, state: VictimRecoveryState) -> Literal["complete"]:
         """긴급 조치 후 라우팅"""
@@ -556,11 +664,11 @@ class StructuredVoicePhishingGraph:
         return ""
     
     # ========================================================================
-    # 메인 인터페이스
+    # 메인 인터페이스 - 🔧 무한루프 해결
     # ========================================================================
     
     async def start_conversation(self, session_id: str = None) -> VictimRecoveryState:
-        """구조화된 상담 시작"""
+        """구조화된 상담 시작 (무한루프 방지)"""
         
         if not session_id:
             session_id = f"struct_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -568,14 +676,15 @@ class StructuredVoicePhishingGraph:
         initial_state = create_initial_recovery_state(session_id)
         
         try:
-            config = {"recursion_limit": 20} # 무한루프에 빠지지 않도록
-            result = await self.graph.ainvoke(initial_state, config)
-        
-
-            if self.debug:
-                print(f"✅ 구조화된 상담 시작: {result.get('current_step', 'unknown')}")
+            # 🔧 수정: 무한루프 방지를 위해 간단한 초기화만
+            # 그래프 실행 대신 수동으로 첫 단계만 실행
+            initial_state = self._greeting_node(initial_state)
+            initial_state = self._initial_assessment_node(initial_state)
             
-            return result
+            if self.debug:
+                print(f"✅ 간단한 상담 시작: {initial_state.get('current_step', 'unknown')}")
+            
+            return initial_state
             
         except Exception as e:
             if self.debug:
@@ -591,7 +700,7 @@ class StructuredVoicePhishingGraph:
             return initial_state
     
     async def continue_conversation(self, state: VictimRecoveryState, user_input: str) -> VictimRecoveryState:
-        """Gemini 통합 대화 처리"""
+        """단계별 대화 처리 - 질문 하나씩"""
         
         if not user_input.strip():
             state["messages"].append({
@@ -611,34 +720,42 @@ class StructuredVoicePhishingGraph:
         state["conversation_turns"] = state.get("conversation_turns", 0) + 1
         
         try:
-            # 🔥 핵심: Gemini 사용 여부 확인
-            use_gemini = self._check_gemini_available()
+            # 🔧 핵심: 단계별 진행을 위해 구조화된 방식 사용
+            current_step = state.get("current_step", "greeting_complete")
             
-            if use_gemini:
-                # Gemini AI 처리
-                ai_response = await self._process_with_gemini(user_input, state)
+            if current_step == "greeting_complete" or current_step == "assessment_complete":
+                # 첫 질문 시작
+                state = self._collect_info_node(state)
+                
+            elif current_step == "collecting_info":
+                # 질문 계속 진행
+                state = self._collect_info_node(state)
+                
+                # 모든 질문 완료 시 긴급 조치
+                if state.get("info_collection_complete", False):
+                    if state.get("urgency_level", 0) >= 7:
+                        state = self._emergency_action_node(state)
+                    else:
+                        state = self._complete_node(state)
+            
             else:
-                # 기존 구조화된 처리 (폴백)
-                ai_response = await self._process_structured_fallback(user_input, state)
+                # 완료된 상태에서는 추가 질문 대응
+                response = "추가로 궁금한 점이 있으시면 말씀해 주세요."
+                state["messages"].append({
+                    "role": "assistant",
+                    "content": response,
+                    "timestamp": datetime.now()
+                })
             
-            # AI 응답 추가
-            state["messages"].append({
-                "role": "assistant",
-                "content": ai_response.get('response', '처리 중 오류가 발생했습니다.'),
-                "timestamp": datetime.now(),
-                "ai_metadata": {
-                    "mode": "gemini" if use_gemini else "structured",
-                    "urgency_level": ai_response.get('urgency_level', 3),
-                    "extracted_info": ai_response.get('extracted_info', {})
-                }
-            })
-            
-            # 상태 업데이트
-            state["urgency_level"] = ai_response.get('urgency_level', state.get('urgency_level', 3))
+            # 마지막 AI 메시지 추출해서 TTS용 반환
+            last_ai_message = ""
+            for msg in reversed(state.get("messages", [])):
+                if msg.get("role") == "assistant":
+                    last_ai_message = msg.get("content", "")
+                    break
             
             if self.debug:
-                mode = "Gemini" if use_gemini else "구조화"
-                print(f"✅ {mode} 처리: 턴 {state['conversation_turns']}")
+                print(f"✅ 단계별 처리: {state.get('current_step')} (턴 {state['conversation_turns']})")
             
             return state
             
@@ -648,10 +765,55 @@ class StructuredVoicePhishingGraph:
             
             state["messages"].append({
                 "role": "assistant",
-                "content": "처리 중 문제가 발생했습니다. 긴급한 경우 112로 연락하세요.",
+                "content": "처리 중 문제가 발생했습니다. 긴급한 경우 대한법률구조공단 132번으로 연락하세요.",
                 "timestamp": datetime.now()
             })
             return state
+    
+    def _simple_rule_based_response(self, user_input: str, state: VictimRecoveryState) -> Dict[str, Any]:
+        """간단한 규칙 기반 응답 (Gemini 없을 때)"""
+        
+        user_lower = user_input.lower()
+        urgency = 3
+        
+        # 긴급도 계산
+        if any(word in user_lower for word in ['돈', '송금', '보냈', '이체', '틀렸', '사기', '억', '만원']):
+            urgency = 8
+        elif any(word in user_lower for word in ['의심', '이상', '피싱']):
+            urgency = 6
+        
+        # 실질적 도움 응답
+        if urgency >= 8:
+            response = """🚨 즉시 실행하세요:
+
+1️⃣ mSAFER (www.msafer.or.kr)에서 명의도용 차단
+2️⃣ 보이스피싱제로 (voicephisingzero.co.kr)에서 300만원 생활비 지원 신청
+3️⃣ 대한법률구조공단 132번 무료 상담
+
+💡 3일 환급보다 300만원 지원이 더 확실합니다!"""
+        elif urgency >= 6:
+            response = """📞 전문가 상담 우선:
+
+1️⃣ 대한법률구조공단 132번 무료 상담
+2️⃣ 보이스피싱제로 지원 조건 확인
+3️⃣ mSAFER 명의도용 방지 설정
+
+개인 상황에 맞는 최적 전략을 수립하세요."""
+        else:
+            response = """🛡️ 예방 조치:
+
+1️⃣ mSAFER (www.msafer.or.kr) 명의도용 방지 서비스 등록
+2️⃣ 132번으로 정확한 상황 확인
+3️⃣ 실제 피해인지 전문가와 확인
+
+예방이 가장 중요합니다."""
+        
+        return {
+            "response": response,
+            "urgency_level": urgency,
+            "extracted_info": {},
+            "next_priority": "practical_guidance"
+        }
     
     def _check_gemini_available(self) -> bool:
         """Gemini 사용 가능 여부 확인"""
@@ -662,7 +824,7 @@ class StructuredVoicePhishingGraph:
             return gemini_assistant.is_enabled
         except ImportError:
             if self.debug:
-                print("⚠️ Gemini 어시스턴트 없음 - 구조화된 모드 사용")
+                print("⚠️ Gemini 어시스턴트 없음 - 규칙 기반 모드 사용")
             return False
         except Exception as e:
             if self.debug:
@@ -706,67 +868,9 @@ class StructuredVoicePhishingGraph:
             if self.debug:
                 print(f"❌ Gemini 처리 실패: {e}")
             
-            # 구조화된 방식으로 폴백
-            return await self._process_structured_fallback(user_input, state)
-
-    async def _process_structured_fallback(self, user_input: str, state: VictimRecoveryState) -> Dict[str, Any]:
-        """기존 구조화된 처리 (폴백)"""
-        
-        # 기존 로직 사용
-        current_step = state.get("current_step", "greeting_complete")
-        
-        if current_step == "greeting_complete":
-            # 초기 평가 + 첫 질문
-            state = self._initial_assessment_node(state)
-            state = self._collect_info_node(state)
-            
-            # 마지막 AI 메시지 추출
-            last_ai_message = ""
-            for msg in reversed(state.get("messages", [])):
-                if msg.get("role") == "assistant":
-                    last_ai_message = msg.get("content", "")
-                    break
-            
-            return {
-                'response': last_ai_message or "다시 말씀해 주세요.",
-                'urgency_level': state.get('urgency_level', 3),
-                'extracted_info': {},
-                'mode': 'structured_fallback'
-            }
-            
-        elif current_step == "collecting_info":
-            # 정보 수집 계속
-            if not state.get("info_collection_complete", False):
-                state = self._collect_info_node(state)
-            else:
-                # 수집 완료 처리
-                if state.get("is_emergency", False):
-                    state = self._emergency_action_node(state)
-                else:
-                    state = self._complete_node(state)
-            
-            # 마지막 AI 메시지 추출
-            last_ai_message = ""
-            for msg in reversed(state.get("messages", [])):
-                if msg.get("role") == "assistant":
-                    last_ai_message = msg.get("content", "")
-                    break
-            
-            return {
-                'response': last_ai_message or "계속 진행하겠습니다.",
-                'urgency_level': state.get('urgency_level', 3),
-                'extracted_info': {},
-                'mode': 'structured_fallback'
-            }
-        
-        else:
-            # 기본 응답
-            return {
-                'response': "상황을 파악했습니다. 더 자세히 말씀해 주시겠어요?",
-                'urgency_level': state.get('urgency_level', 3),
-                'extracted_info': {},
-                'mode': 'structured_fallback'
-            }
+            # 규칙 기반으로 폴백
+            return self._simple_rule_based_response(user_input, state)
+    
     def get_collected_info(self, state: VictimRecoveryState) -> Dict[str, Any]:
         """수집된 정보 조회"""
         

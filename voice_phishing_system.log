@@ -1948,3 +1948,159 @@
 01:06:41 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
 01:06:47 | __main__     | INFO     | 
 📶 종료 신호 수신 - 즉시 종료
+14:17:07 | __main__     | INFO     | 🐛 디버그 모드 활성화 - 성능이 저하될 수 있습니다
+14:17:07 | __main__     | INFO     | ============================================================
+14:17:07 | __main__     | INFO     | 🛡️  고성능 보이스피싱 AI 상담 시스템
+14:17:07 | __main__     | INFO     | ============================================================
+14:17:07 | __main__     | INFO     | 🧠 초기 메모리 사용량: 115.1 MB
+14:17:07 | __main__     | INFO     | ✅ 애플리케이션 초기화 완료 (0.01초)
+14:17:07 | __main__     | INFO     | 🚀 고성능 보이스피싱 상담 시스템 시작
+14:17:07 | __main__     | INFO     | 💡 종료하려면 Ctrl+C를 누르세요
+14:17:07 | __main__     | INFO     | ------------------------------------------------------------
+14:17:07 | services.conversation_manager | INFO     | 🚀 고성능 대화 관리자 초기화...
+14:17:07 | services.conversation_manager | INFO     | ✅ STT 클라이언트 초기화 완료
+14:17:07 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+14:17:07 | services.tts_service | INFO     | TTS 연결 테스트: 성공
+14:17:07 | services.conversation_manager | INFO     | ✅ TTS 서비스 연결 확인
+14:17:07 | services.audio_manager | INFO     | ✅ 고성능 오디오 출력 초기화 완료
+14:17:07 | services.conversation_manager | INFO     | ✅ 오디오 매니저 초기화 완료
+14:17:07 | services.conversation_manager | INFO     | ✅ LangGraph 시작 - 세션: struct_20250616_141707
+14:17:07 | services.conversation_manager | INFO     | 🔊 초기 인사말 재생
+14:17:08 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+14:17:14 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+14:17:14 | services.conversation_manager | INFO     | 🎙️ 고성능 대화 시작
+14:17:14 | services.conversation_manager | INFO     | 🎤 최적화된 STT 시작
+14:17:14 | services.conversation_manager | INFO     | 🎤 오디오 모니터링 시작 시도...
+14:17:16 | services.conversation_manager | INFO     | 🎤 오디오 레벨 모니터링 시작
+14:17:18 | services.conversation_manager | INFO     | 👤 사용자: 세요
+14:17:18 | __main__     | INFO     | 사용자 입력 (2자): 세요
+14:17:18 | services.conversation_manager | INFO     | AI: 처리 중 문제가 발생했습니다. 긴급한 경우 112로 연락하세요....
+14:17:18 | __main__     | INFO     | AI 응답 (35자): 처리 중 문제가 발생했습니다. 긴급한 경우 112로 연락하세요.
+14:17:19 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+14:17:25 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+14:17:26 | services.conversation_manager | INFO     | 👤 사용자: 저늘
+14:17:26 | __main__     | INFO     | 사용자 입력 (2자): 저늘
+14:17:29 | services.conversation_manager | INFO     | 👤 사용자: 아 만약
+14:17:29 | __main__     | INFO     | 사용자 입력 (4자): 아 만약
+14:17:36 | __main__     | INFO     | 
+📶 종료 신호 수신 - 즉시 종료
+16:46:03 | __main__     | INFO     | 🐛 디버그 모드 활성화 - 성능이 저하될 수 있습니다
+16:46:03 | __main__     | INFO     | ============================================================
+16:46:03 | __main__     | INFO     | 🛡️  고성능 보이스피싱 AI 상담 시스템
+16:46:03 | __main__     | INFO     | ============================================================
+16:46:03 | __main__     | INFO     | 🧠 초기 메모리 사용량: 115.1 MB
+16:46:03 | __main__     | INFO     | ✅ 애플리케이션 초기화 완료 (0.01초)
+16:46:03 | __main__     | INFO     | 🚀 고성능 보이스피싱 상담 시스템 시작
+16:46:03 | __main__     | INFO     | 💡 종료하려면 Ctrl+C를 누르세요
+16:46:03 | __main__     | INFO     | ------------------------------------------------------------
+16:46:03 | services.conversation_manager | INFO     | 🚀 고성능 대화 관리자 초기화...
+16:46:03 | services.conversation_manager | INFO     | ✅ STT 클라이언트 초기화 완료
+16:46:03 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:46:03 | services.tts_service | INFO     | TTS 연결 테스트: 성공
+16:46:03 | services.conversation_manager | INFO     | ✅ TTS 서비스 연결 확인
+16:46:03 | services.audio_manager | INFO     | ✅ 고성능 오디오 출력 초기화 완료
+16:46:03 | services.conversation_manager | INFO     | ✅ 오디오 매니저 초기화 완료
+16:46:03 | asyncio      | WARNING  | Executing <Task pending name='ConversationManager' coro=<HighPerformanceConversationManager.start_conversation() running at C:\Users\kimdu\Desktop\voice\services\conversation_manager.py:288> wait_for=<Future pending cb=[Task.task_wakeup()] created at C:\Users\kimdu\anaconda3\envs\py311_gemini\Lib\asyncio\base_events.py:428> cb=[gather.<locals>._done_callback() at C:\Users\kimdu\anaconda3\envs\py311_gemini\Lib\asyncio\tasks.py:764] created at C:\Users\kimdu\anaconda3\envs\py311_gemini\Lib\asyncio\tasks.py:384> took 0.109 seconds
+16:46:03 | services.conversation_manager | INFO     | ✅ LangGraph 시작 - 세션: struct_20250616_164603
+16:46:03 | services.conversation_manager | INFO     | 🔊 초기 인사말 재생
+16:46:04 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:46:10 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+16:46:10 | services.conversation_manager | INFO     | 🎙️ 고성능 대화 시작
+16:46:10 | services.conversation_manager | INFO     | 🎤 최적화된 STT 시작
+16:46:10 | services.conversation_manager | INFO     | 🎤 오디오 모니터링 시작 시도...
+16:46:10 | services.conversation_manager | INFO     | 🎤 오디오 레벨 모니터링 시작
+16:46:13 | services.conversation_manager | INFO     | 👤 사용자: 어 보이스피싱 방했음
+16:46:13 | __main__     | INFO     | 사용자 입력 (11자): 어 보이스피싱 방했음
+16:46:13 | services.conversation_manager | INFO     | AI: 피해자가 본인일까요? '네' 혹은 '아니요'로 대답해주세요....
+16:46:13 | __main__     | INFO     | AI 응답 (33자): 피해자가 본인일까요? '네' 혹은 '아니요'로 대답해주세요.
+16:46:13 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:46:19 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+16:46:24 | services.conversation_manager | INFO     | 👤 사용자: 맞아요
+16:46:24 | __main__     | INFO     | 사용자 입력 (3자): 맞아요
+16:46:24 | services.conversation_manager | INFO     | AI: ✅ 피해자: 네
+
+송금한 돈이 얼마인가요? 정확한 금액을 말씀해 주세요....
+16:46:24 | __main__     | INFO     | AI 응답 (40자): ✅ 피해자: 네
+
+송금한 돈이 얼마인가요? 정확한 금액을 말씀해 주세요.
+16:46:24 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:46:31 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+16:46:34 | services.conversation_manager | INFO     | 👤 사용자: 15억
+16:46:34 | __main__     | INFO     | 사용자 입력 (3자): 15억
+16:46:34 | services.conversation_manager | INFO     | AI: ✅ 송금 금액: 15원
+
+언제 송금하셨나요? 생각나는 송금시간을 말씀해주세요....
+16:46:34 | __main__     | INFO     | AI 응답 (43자): ✅ 송금 금액: 15원
+
+언제 송금하셨나요? 생각나는 송금시간을 말씀해주세요.
+16:46:35 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:46:43 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+16:46:45 | services.conversation_manager | INFO     | 👤 사용자: 25분 전에 다
+16:46:45 | __main__     | INFO     | 사용자 입력 (8자): 25분 전에 다
+16:46:45 | services.conversation_manager | INFO     | AI: ✅ 송금 시기: 25분 전에 다
+
+계좌 지급정지 신청을 하셨나요? '네' 혹은 '아니요'로 답해주세요....
+16:46:45 | __main__     | INFO     | AI 응답 (57자): ✅ 송금 시기: 25분 전에 다
+
+계좌 지급정지 신청을 하셨나요? '네' 혹은 '아니요'로 답해주세요.
+16:46:46 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:46:56 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+16:46:56 | services.conversation_manager | INFO     | 👤 사용자: 예 만
+16:46:56 | __main__     | INFO     | 사용자 입력 (3자): 예 만
+16:46:56 | services.conversation_manager | INFO     | AI: ✅ 계좌 지급정지: 네
+
+경찰서에 신고하셨나요? '네' 혹은 '아니요'로 답해주세요....
+16:46:56 | __main__     | INFO     | AI 응답 (47자): ✅ 계좌 지급정지: 네
+
+경찰서에 신고하셨나요? '네' 혹은 '아니요'로 답해주세요.
+16:46:56 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:47:05 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+16:47:05 | services.conversation_manager | INFO     | 👤 사용자: 내가
+16:47:05 | __main__     | INFO     | 사용자 입력 (2자): 내가
+16:47:05 | services.conversation_manager | INFO     | AI: 정보 수집이 완료되었습니다. 상황을 분석하겠습니다....
+16:47:05 | __main__     | INFO     | AI 응답 (28자): 정보 수집이 완료되었습니다. 상황을 분석하겠습니다.
+16:47:05 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+16:47:09 | __main__     | INFO     | 
+📶 종료 신호 수신 - 즉시 종료
+17:10:44 | __main__     | INFO     | 🐛 디버그 모드 활성화 - 성능이 저하될 수 있습니다
+17:10:44 | __main__     | INFO     | ============================================================
+17:10:44 | __main__     | INFO     | 🛡️  고성능 보이스피싱 AI 상담 시스템
+17:10:44 | __main__     | INFO     | ============================================================
+17:10:44 | __main__     | INFO     | 🧠 초기 메모리 사용량: 115.1 MB
+17:10:44 | __main__     | INFO     | ✅ 애플리케이션 초기화 완료 (0.01초)
+17:10:44 | __main__     | INFO     | 🚀 고성능 보이스피싱 상담 시스템 시작
+17:10:44 | __main__     | INFO     | 💡 종료하려면 Ctrl+C를 누르세요
+17:10:44 | __main__     | INFO     | ------------------------------------------------------------
+17:10:44 | services.conversation_manager | INFO     | 🚀 고성능 대화 관리자 초기화...
+17:10:44 | services.conversation_manager | INFO     | ✅ STT 클라이언트 초기화 완료
+17:10:44 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+17:10:44 | services.tts_service | INFO     | TTS 연결 테스트: 성공
+17:10:44 | services.conversation_manager | INFO     | ✅ TTS 서비스 연결 확인
+17:10:44 | services.audio_manager | INFO     | ✅ 고성능 오디오 출력 초기화 완료
+17:10:44 | services.conversation_manager | INFO     | ✅ 오디오 매니저 초기화 완료
+17:10:44 | services.conversation_manager | INFO     | ✅ LangGraph 시작 - 세션: struct_20250616_171044
+17:10:44 | services.conversation_manager | INFO     | 🔊 초기 인사말 재생
+17:10:45 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+17:10:51 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+17:10:51 | services.conversation_manager | INFO     | 🎙️ 고성능 대화 시작
+17:10:51 | services.conversation_manager | INFO     | 🎤 최적화된 STT 시작
+17:10:51 | services.conversation_manager | INFO     | 🎤 오디오 모니터링 시작 시도...
+17:10:52 | services.conversation_manager | INFO     | 🎤 오디오 레벨 모니터링 시작
+17:11:05 | services.conversation_manager | INFO     | 👤 사용자: 돈 이름
+17:11:05 | __main__     | INFO     | 사용자 입력 (4자): 돈 이름
+17:11:05 | services.conversation_manager | INFO     | AI: 피해자가 본인일까요? '네' 혹은 '아니요'로 대답해주세요....
+17:11:05 | __main__     | INFO     | AI 응답 (33자): 피해자가 본인일까요? '네' 혹은 '아니요'로 대답해주세요.
+17:11:06 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+17:11:11 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+17:11:18 | services.conversation_manager | INFO     | 👤 사용자: 엠티
+17:11:18 | __main__     | INFO     | 사용자 입력 (2자): 엠티
+17:11:18 | services.conversation_manager | INFO     | AI: 처리 중 문제가 발생했습니다. 긴급한 경우 일일이로 연락하세요....
+17:11:18 | __main__     | INFO     | AI 응답 (35자): 처리 중 문제가 발생했습니다. 긴급한 경우 일일이로 연락하세요.
+17:11:18 | httpx        | INFO     | HTTP Request: POST https://api.elevenlabs.io/v1/text-to-speech/uyVNoMrnUku1dZyVEXwD/stream?output_format=mp3_44100_128 "HTTP/1.1 200 OK"
+17:11:25 | services.conversation_manager | INFO     | 🔊 TTS 재생 완료
+17:11:38 | services.conversation_manager | INFO     | 👤 사용자: 도와주세요
+17:11:38 | __main__     | INFO     | 사용자 입력 (5자): 도와주세요
+17:11:38 | services.conversation_manager | INFO     | AI: 처리 중 문제가 발생했습니다. 긴급한 경우 일일이로 연락하세요....
+17:11:38 | __main__     | INFO     | AI 응답 (35자): 처리 중 문제가 발생했습니다. 긴급한 경우 일일이로 연락하세요.
+17:11:43 | __main__     | INFO     | 
+📶 종료 신호 수신 - 즉시 종료

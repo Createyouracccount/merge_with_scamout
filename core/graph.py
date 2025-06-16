@@ -11,6 +11,8 @@ sys.path.insert(0, current_dir)
 from langgraph.graph import StateGraph, START, END
 
 from core.state import VictimRecoveryState, create_initial_recovery_state
+from services.enhanced_info_extractor import EnhancedInfoExtractor
+from core.improved_graph_nodes import ImprovedInfoCollectionNode
 
 class StructuredVoicePhishingGraph:
     """
@@ -23,6 +25,8 @@ class StructuredVoicePhishingGraph:
     def __init__(self, debug: bool = True):
         self.debug = debug
         self.graph = self._build_structured_graph()
+        self.info_extractor = EnhancedInfoExtractor()
+        self.info_collector = ImprovedInfoCollectionNode(self.info_extractor)
         
         # 구조화된 질문 순서
         self.question_flow = [
@@ -173,7 +177,21 @@ class StructuredVoicePhishingGraph:
         return state
     
     def _collect_info_node(self, state: VictimRecoveryState) -> VictimRecoveryState:
-        """구조화된 정보 수집"""
+        """강화된 정보 수집 노드"""
+        
+        # 강화된 정보 추출기 사용
+        if not hasattr(self, 'info_extractor'):
+            from services.enhanced_info_extractor import EnhancedInfoExtractor
+            self.info_extractor = EnhancedInfoExtractor()
+            
+            # question_types 매핑도 추가
+            self.question_types = {
+                "victim": "yes_no",
+                "loss_amount": "amount", 
+                "time_context": "time",
+                "account_frozen": "yes_no",
+                "reported_to_police": "yes_no"
+            }
         
         current_index = state.get("current_question_index", 0)
         
@@ -182,15 +200,31 @@ class StructuredVoicePhishingGraph:
             last_user_message = self._get_last_user_message(state)
             prev_question = self.question_flow[current_index - 1]
             
-            # 답변 파싱 및 저장
-            parsed_answer = self._parse_answer(last_user_message, prev_question["type"])
-            state[prev_question["field"]] = parsed_answer
+            # 🔧 강화된 정보 추출 사용
+            question_type = self.question_types.get(prev_question["field"], "text")
+            extraction_result = self.info_extractor.extract_all_info(last_user_message, question_type)
             
-            # 확인 메시지
-            confirmation = self._generate_confirmation(prev_question["field"], parsed_answer)
+            # 신뢰도 기반 처리
+            if extraction_result.get('confidence', 0) >= 0.7:
+                # 높은 신뢰도 - 바로 저장
+                if prev_question["field"] == "loss_amount":
+                    state[prev_question["field"]] = extraction_result.get('formatted')
+                    # 긴급도 업데이트
+                    amount = extraction_result.get('amount')
+                    if amount and amount > 50000000:  # 5천만원 이상
+                        state['urgency_level'] = 9
+                        state['is_emergency'] = True
+                else:
+                    state[prev_question["field"]] = extraction_result.get('answer', extraction_result.get('normalized'))
+                
+                confirmation = self._generate_smart_confirmation(prev_question["field"], extraction_result)
+            else:
+                # 낮은 신뢰도 - 재확인 필요
+                state[prev_question["field"]] = f"{extraction_result.get('raw_text')} (재확인 필요)"
+                confirmation = f"다시 한 번 확인해주세요: {prev_question['question']}"
             
             if self.debug:
-                print(f"✅ 수집: {prev_question['field']} = {parsed_answer}")
+                print(f"✅ 수집: {prev_question['field']} = {state[prev_question['field']]}")
         
         # 다음 질문 확인
         if current_index < len(self.question_flow):
@@ -220,6 +254,26 @@ class StructuredVoicePhishingGraph:
         state["current_step"] = "collecting_info"
         
         return state
+    
+    def _generate_smart_confirmation(self, field: str, extraction_result: dict) -> str:
+        """스마트 확인 메시지 생성"""
+        
+        field_names = {
+            "victim": "피해자",
+            "loss_amount": "송금 금액", 
+            "time_context": "송금 시기",
+            "account_frozen": "계좌 지급정지",
+            "reported_to_police": "경찰 신고"
+        }
+        
+        field_name = field_names.get(field, field)
+        
+        if field == "loss_amount":
+            value = extraction_result.get('formatted', extraction_result.get('raw_text'))
+        else:
+            value = extraction_result.get('answer', extraction_result.get('normalized', extraction_result.get('raw_text')))
+        
+        return f"✅ {field_name}: {value}"
     
     def _emergency_action_node(self, state: VictimRecoveryState) -> VictimRecoveryState:
         """긴급 조치 안내"""

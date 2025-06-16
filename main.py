@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
-고성능 보이스피싱 상담 시스템 메인 애플리케이션
-최적화된 STT → LangGraph → TTS 통합 파이프라인
+음성 친화적 보이스피싱 상담 시스템
+- 3초 이내 빠른 응답
+- 80자 이내 간결한 답변
+- 실질적 도움 우선
+- 즉시 실행 가능한 조치 안내
 """
 
 import asyncio
@@ -18,135 +21,105 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config.settings import settings
-from services.conversation_manager import HighPerformanceConversationManager, ConversationState
+from services.conversation_manager import VoiceFriendlyConversationManager, ConversationState
 
-# 최적화된 로깅 설정
-def setup_optimized_logging():
-    """고성능 로깅 설정"""
+# 음성 친화적 로깅 설정
+def setup_voice_friendly_logging():
+    """간단하고 빠른 로깅 설정"""
     
-    # 로그 레벨 설정
     log_level = getattr(logging, settings.LOG_LEVEL, logging.INFO)
     
-    # 커스텀 포매터
+    # 간단한 포매터
     formatter = logging.Formatter(
-        '%(asctime)s | %(name)-12s | %(levelname)-8s | %(message)s',
+        '%(asctime)s | %(levelname)-8s | %(message)s',
         datefmt='%H:%M:%S'
     )
     
-    # 콘솔 핸들러 (성능 최적화)
+    # 콘솔 핸들러만 (성능 우선)
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setFormatter(formatter)
     console_handler.setLevel(log_level)
-    
-    # 파일 핸들러 (비동기 방식)
-    try:
-        from logging.handlers import RotatingFileHandler
-        file_handler = RotatingFileHandler(
-            'voice_phishing_system.log',
-            maxBytes=5*1024*1024,  # 5MB
-            backupCount=3,
-            encoding='utf-8'
-        )
-        file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.INFO)
-    except Exception:
-        file_handler = None
     
     # 루트 로거 설정
     root_logger = logging.getLogger()
     root_logger.setLevel(log_level)
     root_logger.addHandler(console_handler)
     
-    if file_handler:
-        root_logger.addHandler(file_handler)
-    
-    # 외부 라이브러리 로그 레벨 조정 (성능 최적화)
-    logging.getLogger('elevenlabs').setLevel(logging.WARNING)
+    # 외부 라이브러리 로그 최소화
+    logging.getLogger('elevenlabs').setLevel(logging.ERROR)
     logging.getLogger('grpc').setLevel(logging.ERROR)
     logging.getLogger('pyaudio').setLevel(logging.ERROR)
 
-setup_optimized_logging()
+setup_voice_friendly_logging()
 logger = logging.getLogger(__name__)
 
-
-
-class HighPerformanceVoicePhishingApp:
-    """고성능 보이스피싱 상담 메인 애플리케이션"""
+class VoiceFriendlyPhishingApp:
+    """음성 친화적 보이스피싱 상담 애플리케이션"""
     
     def __init__(self):
         self.conversation_manager = None
         self.is_running = False
         self.start_time = None
         
-        # 시스템 모니터링
+        # 간단한 시스템 모니터링
         self.process = psutil.Process()
         self.initial_memory = self.process.memory_info().rss
         
-        # 성능 통계
-        self.performance_stats = {
+        # 음성 친화적 통계
+        self.stats = {
             'start_time': None,
             'total_runtime': 0,
             'peak_memory_usage': 0,
             'total_conversations': 0,
-            'avg_cpu_usage': 0.0
+            'fast_responses': 0,  # 3초 이내 응답
+            'emergency_handled': 0
         }
         
-        # 설정 검증
-        self._validate_configuration()
+        # 설정 검증 (빠른 검증)
+        self._quick_validate_config()
     
-    def _validate_configuration(self):
-        """설정 검증 및 최적화"""
+    def _quick_validate_config(self):
+        """빠른 설정 검증"""
         
-        # API 키 확인
+        # 필수 API 키만 확인
         if not settings.RETURNZERO_CLIENT_ID or not settings.RETURNZERO_CLIENT_SECRET:
             logger.error("❌ ReturnZero API 키가 설정되지 않았습니다.")
-            logger.info("환경변수 RETURNZERO_CLIENT_ID, RETURNZERO_CLIENT_SECRET를 설정해주세요.")
             sys.exit(1)
         
         if not settings.ELEVENLABS_API_KEY:
-            logger.warning("⚠️ ElevenLabs API 키가 설정되지 않았습니다. TTS가 비활성화됩니다.")
+            logger.warning("⚠️ ElevenLabs API 키가 없습니다. 텍스트 모드로 진행됩니다.")
         
-        # 성능 모드 설정
-        if settings.DEBUG:
-            logger.info("🐛 디버그 모드 활성화 - 성능이 저하될 수 있습니다")
-        else:
-            # 프로덕션 최적화
-            self._optimize_for_production()
-    
-    def _optimize_for_production(self):
-        """프로덕션 환경 최적화"""
+        # 음성 친화적 설정 확인
+        if settings.AI_RESPONSE_MAX_LENGTH > 100:
+            logger.warning(f"⚠️ 응답 길이가 깁니다: {settings.AI_RESPONSE_MAX_LENGTH}자")
         
-        # 가비지 컬렉션 최적화
-        gc.set_threshold(700, 10, 10)  # 더 자주 GC 실행
+        if settings.SILENCE_TIMEOUT > 5:
+            logger.warning(f"⚠️ 침묵 타임아웃이 깁니다: {settings.SILENCE_TIMEOUT}초")
         
-        # 메모리 최적화 설정
-        import sys
-        sys.setswitchinterval(0.005)  # 스레드 스위칭 간격 단축
-        
-        logger.info("🚀 프로덕션 모드 최적화 완료")
+        logger.info("✅ 음성 친화적 설정 검증 완료")
     
     async def initialize(self):
-        """고성능 애플리케이션 초기화"""
+        """빠른 애플리케이션 초기화"""
         
-        logger.info("=" * 60)
-        logger.info("🛡️  고성능 보이스피싱 AI 상담 시스템")
-        logger.info("=" * 60)
+        logger.info("=" * 50)
+        logger.info("🎙️ 음성 친화적 보이스피싱 상담 시스템")
+        logger.info("=" * 50)
         
         self.start_time = datetime.now()
-        self.performance_stats['start_time'] = self.start_time
+        self.stats['start_time'] = self.start_time
         
         try:
             # 메모리 사용량 체크
             initial_memory_mb = self.initial_memory / 1024 / 1024
-            logger.info(f"🧠 초기 메모리 사용량: {initial_memory_mb:.1f} MB")
+            logger.info(f"🧠 초기 메모리: {initial_memory_mb:.1f} MB")
             
-            # 대화 매니저 생성 (고성능 버전)
-            self.conversation_manager = HighPerformanceConversationManager(
+            # 대화 매니저 빠른 생성
+            self.conversation_manager = VoiceFriendlyConversationManager(
                 client_id=settings.RETURNZERO_CLIENT_ID,
                 client_secret=settings.RETURNZERO_CLIENT_SECRET
             )
             
-            # 콜백 함수 설정
+            # 콜백 설정
             self.conversation_manager.set_callbacks(
                 on_user_speech=self._on_user_speech,
                 on_ai_response=self._on_ai_response,
@@ -155,60 +128,16 @@ class HighPerformanceVoicePhishingApp:
             
             # 초기화 시간 측정
             init_time = (datetime.now() - self.start_time).total_seconds()
-            logger.info(f"✅ 애플리케이션 초기화 완료 ({init_time:.2f}초)")
+            logger.info(f"✅ 빠른 초기화 완료 ({init_time:.2f}초)")
             
             return True
             
         except Exception as e:
             logger.error(f"❌ 초기화 실패: {e}")
             return False
-        
-    def _setup_debug_commands(self):
-        """디버그 명령어 설정"""
-    
-        def debug_input_worker():
-            """디버그 입력 워커"""
-            while self.is_running:
-                try:
-                    cmd = input().strip().lower()
-                    
-                    if cmd == 'status':
-                        # 오디오 상태 출력
-                        if self.conversation_manager:
-                            status = self.conversation_manager.get_audio_status()
-                            print("\n📊 오디오 상태:")
-                            for key, value in status.items():
-                                print(f"   {key}: {value}")
-                            print()
-                    
-                    elif cmd == 'silence':
-                        # 강제 침묵 처리 트리거
-                        if self.conversation_manager:
-                            asyncio.create_task(
-                                self.conversation_manager._handle_silence_timeout()
-                            )
-                            print("🔇 침묵 처리 강제 실행")
-                    
-                    elif cmd == 'help':
-                        print("\n💡 디버그 명령어:")
-                        print("   status  - 오디오 상태 확인")
-                        print("   silence - 침묵 처리 강제 실행")
-                        print("   help    - 도움말")
-                        print()
-                    
-                except (EOFError, KeyboardInterrupt):
-                    break
-                except Exception as e:
-                    logger.error(f"디버그 입력 오류: {e}")
-        
-        # 디버그 모드에서만 활성화
-        if settings.DEBUG:
-            debug_thread = threading.Thread(target=debug_input_worker, daemon=True)
-            debug_thread.start()
-            print("\n💡 디버그 모드: 'status', 'silence', 'help' 명령어 사용 가능")
     
     async def run(self):
-        """최적화된 메인 실행"""
+        """음성 친화적 메인 실행"""
         
         if not await self.initialize():
             logger.error("❌ 애플리케이션 시작 실패")
@@ -217,18 +146,19 @@ class HighPerformanceVoicePhishingApp:
         self.is_running = True
         
         try:
-            logger.info("🚀 고성능 보이스피싱 상담 시스템 시작")
+            logger.info("🚀 음성 친화적 상담 시스템 시작")
             logger.info("💡 종료하려면 Ctrl+C를 누르세요")
-            logger.info("-" * 60)
+            logger.info("-" * 50)
             
             # 시그널 핸들러 설정
             self._setup_signal_handlers()
-
-            # Debug 명령어 설정
-            self._setup_debug_commands()
             
-            # 모니터링 및 대화 태스크 생성
-            tasks = await self._create_main_tasks()
+            # 디버그 명령어 (선택적)
+            if settings.DEBUG:
+                self._setup_debug_commands()
+            
+            # 간단한 모니터링과 대화 실행
+            tasks = await self._create_simple_tasks()
             
             # 모든 태스크 실행
             await asyncio.gather(*tasks, return_exceptions=True)
@@ -239,209 +169,157 @@ class HighPerformanceVoicePhishingApp:
             logger.error(f"❌ 실행 중 오류: {e}")
         finally:
             await self.cleanup()
-
     
-    
-    async def _create_main_tasks(self):
-        """메인 태스크들 생성"""
+    async def _create_simple_tasks(self):
+        """간단한 태스크들 생성"""
         
         tasks = []
         
-        # 시스템 모니터링 태스크
+        # 간단한 모니터링 (30초마다)
         tasks.append(asyncio.create_task(
-            self._system_monitor(), 
-            name="SystemMonitor"
-        ))
-        
-        # 메모리 관리 태스크
-        tasks.append(asyncio.create_task(
-            self._memory_manager(), 
-            name="MemoryManager"
-        ))
-        
-        # 성능 통계 태스크
-        tasks.append(asyncio.create_task(
-            self._performance_reporter(), 
-            name="PerformanceReporter"
+            self._simple_monitoring(), 
+            name="SimpleMonitor"
         ))
         
         # 메인 대화 태스크
         tasks.append(asyncio.create_task(
             self.conversation_manager.start_conversation(),
-            name="ConversationManager"
+            name="VoiceFriendlyConversation"
         ))
         
         return tasks
     
     def _setup_signal_handlers(self):
-    
+        """간단한 시그널 핸들러"""
+        
         def signal_handler(signum, frame):
-            logger.info(f"\n📶 종료 신호 수신 - 즉시 종료")
+            logger.info(f"\n📶 종료 신호 수신")
             import os
-            os._exit(0)  # 즉시 강제 종료
+            os._exit(0)
         
         signal.signal(signal.SIGINT, signal_handler)
     
-    async def _system_monitor(self):
-        """시스템 리소스 모니터링"""
+    def _setup_debug_commands(self):
+        """간단한 디버그 명령어"""
+        
+        def debug_worker():
+            while self.is_running:
+                try:
+                    cmd = input().strip().lower()
+                    
+                    if cmd == 'stats':
+                        # 간단한 통계 출력
+                        if self.conversation_manager:
+                            status = self.conversation_manager.get_conversation_status()
+                            print("\n📊 현재 상태:")
+                            print(f"   상태: {status['state']}")
+                            print(f"   턴 수: {status['total_turns']}")
+                            print(f"   평균 응답시간: {status['avg_response_time']:.3f}초")
+                            print(f"   빠른 응답률: {status['fast_response_rate']}")
+                            print()
+                    
+                    elif cmd == 'audio':
+                        # 오디오 상태
+                        if self.conversation_manager:
+                            audio_status = self.conversation_manager.get_audio_status()
+                            print("\n🎤 오디오 상태:")
+                            for key, value in audio_status.items():
+                                print(f"   {key}: {value}")
+                            print()
+                    
+                    elif cmd == 'help':
+                        print("\n💡 명령어:")
+                        print("   stats - 대화 통계")
+                        print("   audio - 오디오 상태")
+                        print("   help  - 도움말")
+                        print()
+                    
+                except (EOFError, KeyboardInterrupt):
+                    break
+                except Exception:
+                    pass
+        
+        debug_thread = threading.Thread(target=debug_worker, daemon=True)
+        debug_thread.start()
+        print("\n💡 디버그 모드: 'stats', 'audio', 'help' 명령어 사용 가능")
+    
+    async def _simple_monitoring(self):
+        """간단한 시스템 모니터링"""
         
         while self.is_running:
             try:
-                # CPU 사용률
-                cpu_percent = self.process.cpu_percent()
-                
-                # 메모리 사용률
+                # 메모리 체크 (30초마다)
                 memory_info = self.process.memory_info()
                 memory_mb = memory_info.rss / 1024 / 1024
                 
-                # 최대 메모리 사용량 추적
-                if memory_mb > self.performance_stats['peak_memory_usage']:
-                    self.performance_stats['peak_memory_usage'] = memory_mb
+                # 최대 메모리 업데이트
+                if memory_mb > self.stats['peak_memory_usage']:
+                    self.stats['peak_memory_usage'] = memory_mb
                 
-                # CPU 평균 계산
-                current_avg = self.performance_stats['avg_cpu_usage']
-                self.performance_stats['avg_cpu_usage'] = (current_avg + cpu_percent) / 2
-                
-                # 디버그 모드에서만 상세 정보 출력
-                if settings.DEBUG:
-                    logger.debug(f"💻 CPU: {cpu_percent:.1f}%, 메모리: {memory_mb:.1f}MB")
-                
-                # 리소스 경고
-                if memory_mb > 500:  # 500MB 초과
+                # 메모리 경고 (200MB 초과)
+                if memory_mb > 200:
                     logger.warning(f"⚠️ 높은 메모리 사용량: {memory_mb:.1f}MB")
+                    
+                    # 간단한 메모리 정리
+                    gc.collect()
                 
-                if cpu_percent > 80:  # 80% 초과
-                    logger.warning(f"⚠️ 높은 CPU 사용률: {cpu_percent:.1f}%")
-                
-                await asyncio.sleep(15)  # 15초마다 체크
+                await asyncio.sleep(30)  # 30초마다
                 
             except Exception as e:
-                logger.error(f"시스템 모니터링 오류: {e}")
-                await asyncio.sleep(30)
-    
-    async def _memory_manager(self):
-        """메모리 관리 및 최적화"""
-        
-        while self.is_running:
-            try:
-                # 메모리 사용량 체크
-                memory_info = self.process.memory_info()
-                memory_mb = memory_info.rss / 1024 / 1024
-                
-                # 메모리 임계값 체크 (400MB)
-                if memory_mb > 400:
-                    logger.info("🧹 메모리 정리 시작...")
-                    
-                    # 가비지 컬렉션 강제 실행
-                    collected = gc.collect()
-                    
-                    # 대화 매니저 캐시 정리
-                    if hasattr(self.conversation_manager, 'langgraph'):
-                        if hasattr(self.conversation_manager.langgraph, 'clear_cache'):
-                            self.conversation_manager.langgraph.clear_cache()
-                    
-                    # TTS 캐시 정리
-                    if hasattr(self.conversation_manager, 'tts_service'):
-                        if hasattr(self.conversation_manager.tts_service, 'clear_cache'):
-                            self.conversation_manager.tts_service.clear_cache()
-                    
-                    # 정리 후 메모리 확인
-                    new_memory = self.process.memory_info().rss / 1024 / 1024
-                    saved_mb = memory_mb - new_memory
-                    
-                    logger.info(f"🧹 메모리 정리 완료: {saved_mb:.1f}MB 절약 (GC: {collected})")
-                
-                await asyncio.sleep(60)  # 1분마다 체크
-                
-            except Exception as e:
-                logger.error(f"메모리 관리 오류: {e}")
-                await asyncio.sleep(120)
-    
-    async def _performance_reporter(self):
-        """성능 통계 리포트"""
-        
-        while self.is_running:
-            try:
-                await asyncio.sleep(300)  # 5분마다 리포트
-                
-                if not self.conversation_manager:
-                    continue
-                
-                # 대화 매니저 통계
-                conv_status = self.conversation_manager.get_conversation_status()
-                perf_metrics = self.conversation_manager.get_performance_metrics()
-                
-                # 현재 런타임 계산
-                if self.start_time:
-                    runtime = (datetime.now() - self.start_time).total_seconds()
-                    self.performance_stats['total_runtime'] = runtime
-                
-                # 성능 리포트 생성
-                self._log_performance_report(conv_status, perf_metrics)
-                
-            except Exception as e:
-                logger.error(f"성능 리포트 오류: {e}")
-                await asyncio.sleep(300)
-    
-    def _log_performance_report(self, conv_status: dict, perf_metrics: dict):
-        """성능 리포트 로깅"""
-        
-        runtime_mins = self.performance_stats['total_runtime'] / 60
-        memory_mb = self.performance_stats['peak_memory_usage']
-        
-        logger.info("📊 === 성능 리포트 ===")
-        logger.info(f"   실행 시간: {runtime_mins:.1f}분")
-        logger.info(f"   최대 메모리: {memory_mb:.1f}MB")
-        logger.info(f"   평균 CPU: {self.performance_stats['avg_cpu_usage']:.1f}%")
-        logger.info(f"   대화 턴: {conv_status.get('total_turns', 0)}")
-        logger.info(f"   평균 응답시간: {conv_status.get('avg_response_time', 0):.3f}초")
-        logger.info(f"   TTS 성공률: {conv_status.get('tts_success_rate', 0):.1%}")
-        logger.info(f"   큐 크기: {conv_status.get('queue_size', 0)}")
-        logger.info("=" * 25)
+                logger.error(f"모니터링 오류: {e}")
+                await asyncio.sleep(60)
     
     def _on_user_speech(self, text: str):
-        """사용자 음성 인식 콜백"""
+        """사용자 음성 콜백 (간결한 출력)"""
         
-        # 간결한 출력
-        display_text = text[:50] + "..." if len(text) > 50 else text
+        # 간결한 출력 (30자로 제한)
+        display_text = text[:30] + "..." if len(text) > 30 else text
         print(f"\n👤 사용자: {display_text}")
         
-        # 상세 로그는 파일에만
-        logger.info(f"사용자 입력 ({len(text)}자): {text}")
+        # 상세 로그는 디버그 모드에서만
+        if settings.DEBUG:
+            logger.debug(f"사용자 입력 전체: {text}")
     
     def _on_ai_response(self, response: str):
-        """AI 응답 콜백"""
+        """AI 응답 콜백 (간결한 출력)"""
         
-        # 간결한 출력
-        display_response = response[:100] + "..." if len(response) > 100 else response
+        # 간결한 출력 (50자로 제한)
+        display_response = response[:50] + "..." if len(response) > 50 else response
         print(f"\n🤖 상담원: {display_response}")
         
-        # 상세 로그는 파일에만
-        logger.info(f"AI 응답 ({len(response)}자): {response}")
+        # 응급 상황 체크
+        if any(word in response for word in ['긴급', '급해', '즉시', '일삼이']):
+            self.stats['emergency_handled'] += 1
+        
+        # 상세 로그는 디버그 모드에서만
+        if settings.DEBUG:
+            logger.debug(f"AI 응답 전체: {response}")
     
     def _on_state_change(self, old_state: ConversationState, new_state: ConversationState):
-        """상태 변경 콜백"""
+        """상태 변경 콜백 (간단한 표시)"""
         
+        # 상태 아이콘
+        state_icons = {
+            ConversationState.IDLE: "💤",
+            ConversationState.LISTENING: "👂", 
+            ConversationState.PROCESSING: "🧠",
+            ConversationState.SPEAKING: "🗣️",
+            ConversationState.ERROR: "❌"
+        }
+        
+        old_icon = state_icons.get(old_state, "❓")
+        new_icon = state_icons.get(new_state, "❓")
+        
+        # 간단한 상태 표시 (디버그 모드에서만)
         if settings.DEBUG:
-            state_icons = {
-                ConversationState.IDLE: "💤",
-                ConversationState.LISTENING: "👂", 
-                ConversationState.PROCESSING: "🧠",
-                ConversationState.SPEAKING: "🗣️",
-                ConversationState.ERROR: "❌"
-            }
-            
-            old_icon = state_icons.get(old_state, "❓")
-            new_icon = state_icons.get(new_state, "❓")
-            
-            print(f"\n{old_icon} → {new_icon} ({new_state.value})")
+            print(f"{old_icon} → {new_icon}")
         
         logger.debug(f"상태 변경: {old_state.value} → {new_state.value}")
     
     async def cleanup(self):
-        """최적화된 리소스 정리"""
+        """빠른 리소스 정리"""
         
-        logger.info("🧹 애플리케이션 종료 중...")
+        logger.info("🧹 음성 친화적 앱 종료 중...")
         
         try:
             self.is_running = False
@@ -450,10 +328,10 @@ class HighPerformanceVoicePhishingApp:
             if self.conversation_manager:
                 await self.conversation_manager.cleanup()
             
-            # 최종 성능 통계
-            self._print_final_statistics()
+            # 최종 통계 출력
+            self._print_final_stats()
             
-            # 메모리 정리
+            # 간단한 메모리 정리
             gc.collect()
             
             logger.info("✅ 정리 완료")
@@ -461,8 +339,8 @@ class HighPerformanceVoicePhishingApp:
         except Exception as e:
             logger.error(f"정리 중 오류: {e}")
     
-    def _print_final_statistics(self):
-        """최종 통계 출력"""
+    def _print_final_stats(self):
+        """최종 통계 출력 (간결하게)"""
         
         if not self.start_time:
             return
@@ -470,18 +348,19 @@ class HighPerformanceVoicePhishingApp:
         total_runtime = (datetime.now() - self.start_time).total_seconds()
         final_memory = self.process.memory_info().rss / 1024 / 1024
         
-        logger.info("📈 === 최종 성능 통계 ===")
-        logger.info(f"   총 실행 시간: {total_runtime/60:.1f}분")
-        logger.info(f"   최대 메모리 사용량: {self.performance_stats['peak_memory_usage']:.1f}MB")
-        logger.info(f"   최종 메모리 사용량: {final_memory:.1f}MB")
-        logger.info(f"   평균 CPU 사용률: {self.performance_stats['avg_cpu_usage']:.1f}%")
+        logger.info("📈 === 최종 통계 ===")
+        logger.info(f"   실행 시간: {total_runtime/60:.1f}분")
+        logger.info(f"   최대 메모리: {self.stats['peak_memory_usage']:.1f}MB")
+        logger.info(f"   최종 메모리: {final_memory:.1f}MB")
         
         if self.conversation_manager:
             conv_status = self.conversation_manager.get_conversation_status()
-            logger.info(f"   총 대화 턴: {conv_status.get('total_turns', 0)}")
-            logger.info(f"   평균 응답 시간: {conv_status.get('avg_response_time', 0):.3f}초")
+            logger.info(f"   대화 턴: {conv_status.get('total_turns', 0)}")
+            logger.info(f"   평균 응답시간: {conv_status.get('avg_response_time', 0):.3f}초")
+            logger.info(f"   빠른 응답률: {conv_status.get('fast_response_rate', '0%')}")
+            logger.info(f"   응급 처리: {self.stats['emergency_handled']}회")
         
-        logger.info("=" * 30)
+        logger.info("=" * 20)
 
 async def main():
     """메인 함수"""
@@ -491,7 +370,7 @@ async def main():
     loop.set_debug(settings.DEBUG)
     
     # 애플리케이션 실행
-    app = HighPerformanceVoicePhishingApp()
+    app = VoiceFriendlyPhishingApp()
     await app.run()
 
 if __name__ == "__main__":
@@ -501,6 +380,12 @@ if __name__ == "__main__":
             # Windows 최적화
             asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
         
+        # 시작 메시지
+        print("🎙️ 음성 친화적 보이스피싱 상담 시스템")
+        print("⚡ 3초 이내 빠른 응답, 80자 이내 간결한 답변")
+        print("🆘 실질적 도움 우선: mSAFER, 보이스피싱제로, 132번")
+        print()
+        
         asyncio.run(main())
         
     except KeyboardInterrupt:
@@ -508,5 +393,3 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"치명적 오류: {e}")
         sys.exit(1)
-
-        # 터미널에 입력해서 상태를 파악할 수 있다.

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Literal, Dict, Any, List, Optional
 import asyncio
 import re
+import logging
 
 # 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -11,6 +12,9 @@ sys.path.insert(0, current_dir)
 
 from langgraph.graph import StateGraph, START, END
 from core.state import VictimRecoveryState, create_initial_recovery_state
+
+# logger 설정
+logger = logging.getLogger(__name__)
 
 class VoiceFriendlyPhishingGraph:
     """
@@ -24,6 +28,19 @@ class VoiceFriendlyPhishingGraph:
     def __init__(self, debug: bool = True):
         self.debug = debug
         self.graph = self._build_voice_friendly_graph()
+
+        # 하이브리드 기능 초기화
+        try:
+            from .hybrid_decision import HybridDecisionEngine
+            self.decision_engine = HybridDecisionEngine()
+            self.use_gemini = self._check_gemini_available()
+            if self.debug:
+                print("✅ 하이브리드 모드 초기화 완료")
+        except ImportError:
+            self.decision_engine = None
+            self.use_gemini = False
+            if self.debug:
+                print("⚠️ 하이브리드 모드 비활성화 (hybrid_decision.py 없음)")
         
         # 간결한 단계별 진행
         self.action_steps = {
@@ -60,6 +77,28 @@ class VoiceFriendlyPhishingGraph:
         
         if debug:
             print("✅ 음성 친화적 상담 그래프 초기화 완료")
+
+    def _check_gemini_available(self) -> bool:
+        """Gemini 사용 가능 여부 확인 - 개선된 버전"""
+        try:
+            from services.gemini_assistant import gemini_assistant
+            is_available = gemini_assistant.is_enabled
+            
+            if self.debug:
+                if is_available:
+                    print("✅ Gemini 사용 가능")
+                else:
+                    print("⚠️ Gemini API 키 없음 - 룰 기반만 사용")
+            
+            return is_available
+        except ImportError:
+            if self.debug:
+                print("⚠️ Gemini 모듈 없음 - 룰 기반만 사용")
+            return False
+        except Exception as e:
+            if self.debug:
+                print(f"⚠️ Gemini 확인 오류: {e} - 룰 기반만 사용")
+            return False
     
     def _build_voice_friendly_graph(self) -> StateGraph:
         """음성 친화적 그래프 구성"""
@@ -336,6 +375,14 @@ class VoiceFriendlyPhishingGraph:
                 return msg.get("content", "").strip()
         return ""
     
+    def _get_last_ai_message(self, state: VictimRecoveryState) -> str:
+        """마지막 AI 메시지 추출"""
+        messages = state.get("messages", [])
+        for msg in reversed(messages):
+            if msg.get("role") == "assistant":
+                return msg.get("content", "")
+        return ""
+    
     # ========================================================================
     # 메인 인터페이스
     # ========================================================================
@@ -371,7 +418,7 @@ class VoiceFriendlyPhishingGraph:
             return initial_state
     
     async def continue_conversation(self, state: VictimRecoveryState, user_input: str) -> VictimRecoveryState:
-        """단계별 간결한 대화 처리"""
+        """단계별 간결한 대화 처리 - 하이브리드 지원"""
         
         if not user_input.strip():
             state["messages"].append({
@@ -390,6 +437,33 @@ class VoiceFriendlyPhishingGraph:
         
         state["conversation_turns"] = state.get("conversation_turns", 0) + 1
         
+        # 🆕 하이브리드 판단 (decision_engine이 있을 때만)
+        if self.decision_engine and self.use_gemini:
+            last_ai_message = self._get_last_ai_message(state)
+            decision = self.decision_engine.should_use_gemini(
+                user_input, 
+                state["messages"], 
+                last_ai_message
+            )
+            
+            if self.debug:
+                print(f"🔍 하이브리드 판단: {decision['use_gemini']} (신뢰도: {decision['confidence']:.2f})")
+                if decision['reasons']:
+                    print(f"   이유: {', '.join(decision['reasons'])}")
+            
+            if decision["use_gemini"]:
+                # Gemini 처리
+                if self.debug:
+                    print("🤖 Gemini 처리 시작")
+                return await self._handle_with_gemini(user_input, state, decision)
+            else:
+                if self.debug:
+                    print("⚡ 룰 기반 처리 선택")
+        else:
+            if self.debug:
+                print("⚠️ 하이브리드 모드 비활성화 - 룰 기반만 사용")
+        
+        # 기존 룰 기반 처리
         try:
             # 현재 단계에 따른 처리
             current_step = state.get("current_step", "greeting_complete")
@@ -434,6 +508,134 @@ class VoiceFriendlyPhishingGraph:
             })
             return state
     
+    async def _handle_with_gemini(self, user_input: str, state: VictimRecoveryState, decision: dict) -> VictimRecoveryState:
+        """Gemini로 처리 - 개선된 버전"""
+        try:
+            if self.debug:
+                print(f"🤖 Gemini 처리 중... 이유: {decision['reasons']}")
+            
+            from services.gemini_assistant import gemini_assistant
+            
+            # 현재 상황 정보 수집
+            urgency_level = state.get("urgency_level", 5)
+            conversation_turns = state.get("conversation_turns", 0)
+            
+            # 간단한 프롬프트 구성
+            context_prompt = f"""사용자가 보이스피싱 상담에서 말했습니다: "{user_input}"
+
+다음 중 가장 적절한 응답을 80자 이내로 해주세요:
+
+1. 사후 대처 관련 질문이면: "PASS 앱에서 명의도용 차단하거나 132번으로 상담받으세요."
+2. 설명 요청이면: 구체적으로 설명
+3. 불만족 표현이면: 다른 방법 제시
+
+JSON 형식: {{"response": "80자 이내 답변"}}"""
+            
+            # Gemini에 컨텍스트 제공
+            context = {
+                "urgency_level": urgency_level,
+                "conversation_turns": conversation_turns,
+                "decision_reasons": decision["reasons"]
+            }
+            
+            # Gemini 응답 생성 (더 짧은 타임아웃)
+            gemini_result = await asyncio.wait_for(
+                gemini_assistant.analyze_and_respond(context_prompt, context),
+                timeout=1.5  # 1.5초로 단축
+            )
+            
+            # 응답 추출
+            ai_response = gemini_result.get("response", "")
+            
+            # 응답이 없거나 너무 길면 폴백
+            if not ai_response or len(ai_response) > 80:
+                if self.debug:
+                    print("⚠️ Gemini 응답 부적절 - 룰 기반 폴백")
+                return await self._fallback_to_rules(state, user_input)
+            
+            # 80자 제한
+            if len(ai_response) > 80:
+                ai_response = ai_response[:77] + "..."
+            
+            state["messages"].append({
+                "role": "assistant",
+                "content": ai_response,
+                "timestamp": datetime.now(),
+                "source": "gemini"
+            })
+            
+            if self.debug:
+                print(f"✅ Gemini 성공: {ai_response}")
+            
+            logger.info(f"🤖 Gemini 처리 완료: {decision['reasons']}")
+            
+            return state
+            
+        except asyncio.TimeoutError:
+            if self.debug:
+                print("⏰ Gemini 타임아웃 - 룰 기반 폴백")
+            logger.warning("Gemini 타임아웃 - 룰 기반 폴백")
+            return await self._fallback_to_rules(state, user_input)
+        except Exception as e:
+            if self.debug:
+                print(f"❌ Gemini 오류: {e} - 룰 기반 폴백")
+            logger.error(f"Gemini 처리 실패: {e} - 룰 기반으로 폴백")
+            return await self._fallback_to_rules(state, user_input)
+    
+    async def _fallback_to_rules(self, state: VictimRecoveryState, user_input: str) -> VictimRecoveryState:
+        """룰 기반으로 폴백 처리 - 개선된 버전"""
+        
+        user_lower = user_input.lower()
+        
+        # "말고" 패턴 감지 - 사용자가 다른 방법을 원함
+        if "말고" in user_lower:
+            if "예방" in user_lower or "사후" in user_lower:
+                response = "PASS 앱에서 명의도용 차단하거나 132번으로 상담받으세요."
+            elif "상담" in user_lower:
+                response = "보이스피싱제로 1811-0041번도 있어요."
+            else:
+                response = "다른 방법으로는 보이스피싱제로 1811-0041번이 있어요."
+        
+        # 설명 요청 감지
+        elif any(word in user_lower for word in ["뭐예요", "무엇", "어떤", "설명"]):
+            if "132" in user_input:
+                response = "132번은 대한법률구조공단 무료 상담 번호예요."
+            elif "설정" in user_input:
+                response = "명의도용방지 설정은 PASS 앱에서 할 수 있어요."
+            else:
+                response = "자세한 설명은 132번으로 전화하시면 들을 수 있어요."
+        
+        # 위치/장소 질문
+        elif any(word in user_lower for word in ["어디예요", "어디", "누구"]):
+            if "132" in user_input:
+                response = "전국 어디서나 132번으로 전화하시면 됩니다."
+            else:
+                response = "132번으로 전화하시면 자세히 알려드려요."
+        
+        # 추가 방법 요청
+        elif any(word in user_lower for word in ["다른", "또", "추가", "더", "어떻게"]):
+            response = "보이스피싱제로 1811-0041번으로 생활비 지원도 받을 수 있어요."
+        
+        # 불만족 표현
+        elif any(word in user_lower for word in ["아니", "다시", "별로", "부족"]):
+            response = "그럼 132번으로 전문상담 받아보시는 게 좋겠어요."
+        
+        # 기본 응답
+        else:
+            response = "궁금한 점이 있으시면 132번으로 전화하세요."
+        
+        state["messages"].append({
+            "role": "assistant",
+            "content": response,
+            "timestamp": datetime.now(),
+            "source": "rule_fallback"
+        })
+        
+        if self.debug:
+            print(f"🔧 룰 기반 폴백: {response}")
+        
+        return state
+    
     def get_conversation_summary(self, state: VictimRecoveryState) -> Dict[str, Any]:
         """대화 요약"""
         
@@ -443,7 +645,9 @@ class VoiceFriendlyPhishingGraph:
             "action_step": state.get("action_step_index", 0),
             "conversation_turns": state.get("conversation_turns", 0),
             "current_step": state.get("current_step", "unknown"),
-            "completion_status": state.get("current_step") == "consultation_complete"
+            "completion_status": state.get("current_step") == "consultation_complete",
+            "hybrid_enabled": self.decision_engine is not None,
+            "gemini_available": self.use_gemini
         }
 
 # 하위 호환성을 위한 별칭

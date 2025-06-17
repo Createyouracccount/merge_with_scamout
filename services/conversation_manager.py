@@ -317,6 +317,9 @@ class VoiceFriendlyConversationManager:
         try:
             text = self.stt_queue.get_nowait()
             
+            # 후처리 교정 추가 
+            text = self._post_process_correction(text)
+
             # 품질 필터링
             if len(text) < self.stt_quality['min_text_length']:
                 return None
@@ -336,6 +339,28 @@ class VoiceFriendlyConversationManager:
             return text
         except queue.Empty:
             return None
+        
+    def _post_process_correction(self, text: str) -> str:
+        """STT 결과 후처리 교정 작업"""
+        corrections = {
+            "지금정지": "지급정지",
+            "지금 정지": "지급정지", 
+            "보이스 삐싱": "보이스피싱",
+            "보이스삐싱": "보이스피싱",
+            "보이스미싱": "보이스피싱",
+            "일 삼 이": "132",
+            "일삼이": "132", 
+            "일 팔 일 일": "1811",
+            "일팔일일": "1811",
+            "명의 도용": "명의도용",
+            "계좌 이체": "계좌이체",
+            "사기 신고": "사기신고"
+        }
+
+        for wrong, correct in corrections.items():
+            text = text.replace(wrong, correct)
+
+        return text
     
     async def _process_user_input_fast(self, user_input: str):
         """빠른 사용자 입력 처리 (3초 이내 목표)"""

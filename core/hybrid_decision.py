@@ -102,6 +102,7 @@ class HybridDecisionEngine:
         
         return decision
     
+    # 왜 이렇게 했는가? : Gemini API를 지속적으로 호출하면 긴급한 사람들에게 기다리는 시간이 늘어나니까
     def _detect_context_mismatch(self, user_input: str, last_ai_response: str) -> float:
         """컨텍스트 불일치 감지"""
         
@@ -168,7 +169,7 @@ class HybridDecisionEngine:
         return min(score, 1.0)
     
     def _detect_dissatisfaction(self, user_input: str, conversation_history: list) -> float:
-        """사용자 불만족 감지 - 더 민감하게"""
+        """사용자 불만족 감지"""
         
         user_lower = user_input.lower()
         score = 0.0
@@ -184,14 +185,14 @@ class HybridDecisionEngine:
         
         # 강한 불만족 표현
         strong_dissatisfaction = [
-            "아니 그런", "정말 도움", "진짜 도움", "제대로 도움"
+            "아니 그런", "정말 도움 안", "진짜 도움 안", "제대로 도움 안", "제발 제대로 이해", "멍청한", "이럴거면 다른",
         ]
         for phrase in strong_dissatisfaction:
             if phrase in user_lower:
                 score += 0.4
         
         # "이해 안되", "모르겠" 등
-        confusion_phrases = ["이해 안", "모르겠", "헷갈", "잘 모르"]
+        confusion_phrases = ["이해 안", "모르겠", "헷갈", "잘 모르", "뭐라고", "무슨 말", "이해를 못"]
         for phrase in confusion_phrases:
             if phrase in user_lower:
                 score += 0.4

@@ -28,7 +28,7 @@ class HighPerformanceAudioManager:
         self.is_playing = False
         self.is_initialized = False
         
-        # 고성능 큐 시스템
+        # 큐 시스템
         self.play_queue = queue.Queue(maxsize=5)  # 큐 크기 제한
         self.priority_queue = queue.PriorityQueue(maxsize=3)  # 우선순위 큐
         

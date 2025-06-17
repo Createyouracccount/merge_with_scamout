@@ -106,8 +106,8 @@ class VoiceFriendlyPhishingGraph:
         workflow = StateGraph(VictimRecoveryState)
         
         # 간소화된 노드들
-        workflow.add_node("greeting", self._greeting_node)
-        workflow.add_node("urgency_check", self._urgency_check_node)
+        workflow.add_node("greeting", self._greeting_node)              # 초기 응대에만 집중 → 정확한 상황 파악
+        workflow.add_node("urgency_check", self._urgency_check_node)    # 긴급도 판단에만 특화
         workflow.add_node("action_guide", self._action_guide_node)
         workflow.add_node("contact_info", self._contact_info_node)
         workflow.add_node("complete", self._complete_node)
@@ -128,7 +128,8 @@ class VoiceFriendlyPhishingGraph:
             self._route_after_urgency,
             {
                 "action_guide": "action_guide",
-                "complete": "complete"
+                # "complete": "complete"
+                # 긴급도 파악 후 넘기는 식으로, 완료가 나버리지 않도록 수정
             }
         )
         
@@ -184,6 +185,7 @@ class VoiceFriendlyPhishingGraph:
         
         if not last_message:
             urgency_level = 5
+            # 기본적으로 응급도는 5로 정함.
         else:
             urgency_level = self._quick_urgency_assessment(last_message)
         
@@ -488,7 +490,7 @@ class VoiceFriendlyPhishingGraph:
                 # 완료 상태에서는 간단한 응답
                 state["messages"].append({
                     "role": "assistant",
-                    "content": "더 도움이 필요하시면 132번으로 전화하세요.",
+                    "content": "자세한 도움이 필요하시다면 대한법률구조공단 일삼이(132)에 도움을 요청하는것도 좋은 방법입니다.",
                     "timestamp": datetime.now()
                 })
             
@@ -503,7 +505,7 @@ class VoiceFriendlyPhishingGraph:
             
             state["messages"].append({
                 "role": "assistant",
-                "content": "문제가 있었습니다. 긴급하면 112번으로 연락하세요.",
+                "content": "문제가 생겼습니다! 피싱 사기는 시간이 가장 중요합니다. 새로고침을 했을 때 정상화면이 보이지 않는다면 즉시 112번으로 연락하여 도움을 요청하세요.",
                 "timestamp": datetime.now()
             })
             return state
@@ -525,9 +527,10 @@ class VoiceFriendlyPhishingGraph:
 
 다음 중 가장 적절한 응답을 80자 이내로 해주세요:
 
-1. 사후 대처 관련 질문이면: "PASS 앱에서 명의도용 차단하거나 132번으로 상담받으세요."
-2. 설명 요청이면: 구체적으로 설명
+1. 질문유형이 어떻게 대처해야 되는가에 대한 질문이라면: 너무 걱정마시고 다음의 방법을 통해 해결하세요. 라고 말하고 나머지 내용은 우리 graph.py를 보고 사용할만한 내용을 말해 것.
+2. 설명 요청이면: 피해자의 질문한 내용에 대해서 자세하고 구체적으로 설명
 3. 불만족 표현이면: 다른 방법 제시
+
 
 JSON 형식: {{"response": "80자 이내 답변"}}"""
             
@@ -538,7 +541,7 @@ JSON 형식: {{"response": "80자 이내 답변"}}"""
                 "decision_reasons": decision["reasons"]
             }
             
-            # Gemini 응답 생성 (더 짧은 타임아웃)
+            # Gemini 응답 생성
             gemini_result = await asyncio.wait_for(
                 gemini_assistant.analyze_and_respond(context_prompt, context),
                 timeout=4.0  # 4.0초로 단축
@@ -589,13 +592,11 @@ JSON 형식: {{"response": "80자 이내 답변"}}"""
         
         # "말고" 패턴 감지 - 사용자가 다른 방법을 원함
         if "말고" in user_lower:
-            if "예방" in user_lower or "사후" in user_lower:
-                response = "PASS 앱에서 명의도용 차단하거나 132번으로 상담받으세요."
-            elif "상담" in user_lower:
-                response = "보이스피싱제로 1811-0041번도 있어요."
+            if any(keyword in user_lower for keyword in ["예방", "사후", "다른"]):
+                response = "패스(PASS) 앱에서 명의도용방지서비스를 신청하시거나 대한법률구조공단의 132번으로 무료상담받으세요."
             else:
-                response = "다른 방법으로는 보이스피싱제로 1811-0041번이 있어요."
-        
+                response = "보이스피싱제로 일팔일일 다시 공공사일(1811-0041)번을 통해 피해 지원사업을 신청하실수도 있어요."
+            
         # 설명 요청 감지
         elif any(word in user_lower for word in ["뭐예요", "무엇", "어떤", "설명"]):
             if "132" in user_input:

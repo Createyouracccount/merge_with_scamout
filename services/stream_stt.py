@@ -10,6 +10,50 @@ import grpc
 import pyaudio
 from requests import Session
 
+API_BASE = "https://openapi.vito.ai"
+GRPC_SERVER_URL = "grpc-openapi.vito.ai:443"
+
+VOICE_PHISHING_KEYWORDS = [
+    # 전화번호 (한글 발음)
+    "일삼이", "일팔일일", "일일이", "일삼삼이",
+    
+    # 핵심 용어
+    "보이스피싱", "피싱", "명의도용", "계좌이체", "지급정지",
+    "사기신고", "신고", "송금", "악성앱", "원격제어",
+    
+    # 기관명
+    "금융감독원", "보이스피싱제로", "대한법률구조공단",
+    
+    # 서비스 (한글만)
+    "엠세이퍼", "페이인포", "패스앱",
+    
+    # 금액/피해 관련
+    "만원", "백만원", "천만원", "개인정보", "비밀번호",
+    "환급", "지원금", "신청", "피해신고", "상담"
+]
+
+
+# INCORRECT_VOICE_PHISHING_KEYWORDS = [
+#     # 전화번호 (한글 발음)
+#     "일 삼 이", "일 팔 일 일", "일 일 이", "일 삼 삼 이",
+    
+#     # 핵심 용어
+#     "보이스비싱", "비싱", "병의도용", "계자이체", "지금정지",
+#     "자기신고", "진고", "옹금", "악승앱", "웡격제어",
+    
+#     # 기관명
+#     "금감원", "보이스미싱제로", "대한범률구조공단",
+    
+#     # 서비스 (한글만)
+#     "앰세이퍼", "패이인포", "빼스앱",
+    
+#     # 금액/피해 관련
+#     "만 원", "백 만원", "천 만원", "개인 정보", "비닐 번호",
+#     "환금", "지원 금", "신 청", "피해 신고", "상 담"
+# ]
+
+SAMPLE_RATE = 16000
+
 # 프로토콜 버퍼 import 수정
 try:
     # 현재 디렉토리에서 import 시도
@@ -208,8 +252,8 @@ class RTZROpenAPIClient:
 
             keyword_idx = False
             keywords = {
-                True: ["농협은행:5.0", "넘 예쁘네:-5.0", "리턴제로"],
-                False: ["넘 예쁘네", "이턴제로"],
+                True : VOICE_PHISHING_KEYWORDS,
+                False : VOICE_PHISHING_KEYWORDS,
             }
 
             global_st_time = time.time()

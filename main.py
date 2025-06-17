@@ -71,7 +71,7 @@ class VoiceFriendlyPhishingApp:
             'total_runtime': 0,
             'peak_memory_usage': 0,
             'total_conversations': 0,
-            'fast_responses': 0,  # 3초 이내 응답
+            'fast_responses': 0,
             'emergency_handled': 0
         }
         

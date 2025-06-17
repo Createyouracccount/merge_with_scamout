@@ -87,13 +87,13 @@ class Settings:
         "PASS앱", "명의도용", "생활비지원", "무료상담"
     ]
     HYBRID_MODE_ENABLED = True
-    GEMINI_CONFIDENCE_THRESHOLD = 0.6    # 60% 이상일 때만 Gemini 사용
-    GEMINI_TIMEOUT_HYBRID = 2.0          # 하이브리드용 짧은 타임아웃
+    GEMINI_CONFIDENCE_THRESHOLD = 0.5    # 50% 이상일 때만 Gemini 사용
+    GEMINI_TIMEOUT_HYBRID = 5.0          # 하이브리드용 짧은 타임아웃
     HYBRID_DEBUG = True                  # 하이브리드 디버그 모드
 
     # 하이브리드 임계값들
     CONTEXT_MISMATCH_THRESHOLD = 0.7     # 컨텍스트 불일치 임계값
-    EXPLANATION_REQUEST_THRESHOLD = 0.6   # 설명 요청 임계값
+    EXPLANATION_REQUEST_THRESHOLD = 0.5   # 설명 요청 임계값
     DISSATISFACTION_THRESHOLD = 0.5      # 불만족 감지 임계값
 
 

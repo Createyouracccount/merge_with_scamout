@@ -70,13 +70,13 @@ class HybridDecisionEngine:
         
         # 2. 설명 요청 감지
         explanation_score = self._detect_explanation_request(user_input)
-        if explanation_score > 0.3:  # 0.4 → 0.3으로 더 낮춤
+        if explanation_score > 0.5:  # 
             decision["use_gemini"] = True
             decision["reasons"].append(f"설명 요청 감지 (점수: {explanation_score:.2f})")
         
         # 3. 사용자 불만족 감지
         dissatisfaction_score = self._detect_dissatisfaction(user_input, conversation_history)
-        if dissatisfaction_score > 0.3:  # 0.4 → 0.3으로 더 낮춤
+        if dissatisfaction_score > 0.5:
             decision["use_gemini"] = True
             decision["reasons"].append(f"사용자 불만족 (점수: {dissatisfaction_score:.2f})")
         

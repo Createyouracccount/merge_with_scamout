@@ -541,7 +541,7 @@ JSON 형식: {{"response": "80자 이내 답변"}}"""
             # Gemini 응답 생성 (더 짧은 타임아웃)
             gemini_result = await asyncio.wait_for(
                 gemini_assistant.analyze_and_respond(context_prompt, context),
-                timeout=1.5  # 1.5초로 단축
+                timeout=4.0  # 4.0초로 단축
             )
             
             # 응답 추출

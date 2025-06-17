@@ -366,11 +366,11 @@ class VoiceFriendlyTTSService:
         
         self.performance_config.update({
             'max_text_length': 50,    # 더욱 단축
-            'timeout': 1.5,           # 더욱 빠르게
-            'emergency_timeout': 1.0  # 응급시 1초
+            'timeout': 2.0,           # 더욱 빠르게
+            'emergency_timeout': 1.5  # 응급시 1.5초
         })
         
-        self.voice_config['output_format'] = 'mp3_16000_32'  # 최저 품질, 최고 속도
+        self.voice_config['output_format'] = 'mp3_22050_32'  # 최저 품질, 최고 속도
         logger.info("🚨 응급 상황용 TTS 최적화 완료")
     
     def cleanup(self):
